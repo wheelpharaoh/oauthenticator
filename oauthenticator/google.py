@@ -11,7 +11,7 @@ from tornado             import gen
 from tornado.auth        import GoogleOAuth2Mixin
 from tornado.web         import HTTPError
 
-from traitlets           import Unicode
+from traitlets           import Unicode, Tuple, default
 
 from jupyterhub.auth     import LocalAuthenticator
 from jupyterhub.utils    import url_path_join
@@ -68,8 +68,7 @@ class GoogleOAuthenticator(OAuthenticator, GoogleOAuth2Mixin):
     login_handler = GoogleLoginHandler
     callback_handler = GoogleOAuthHandler
 
-    hosted_domain = Unicode(
-        os.environ.get('HOSTED_DOMAIN', ''),
+    hosted_domain = Tuple(
         config=True,
         help="""Hosted domain used to restrict sign-in, e.g. mycollege.edu"""
     )
@@ -79,11 +78,16 @@ class GoogleOAuthenticator(OAuthenticator, GoogleOAuth2Mixin):
         help="""Google Apps hosted domain string, e.g. My College"""
     )
 
+    @default('hosted_domain')
+    def _get_hosted_domain(self):
+        domains = os.environ.get('HOSTED_DOMAIN', '')
+        return tuple([domain.strip() for domain in domains.split(',')])
+
     @gen.coroutine
     def authenticate(self, handler, data=None):
         code = handler.get_argument('code', False)
         if not code:
-            raise HTTPError(400, "oauth callback made without a token") 
+            raise HTTPError(400, "oauth callback made without a token")
         if not self.oauth_callback_url:
             raise HTTPError(500, "No callback URL")
         user = yield handler.get_authenticated_user(
@@ -107,15 +111,14 @@ class GoogleOAuthenticator(OAuthenticator, GoogleOAuth2Mixin):
 
         username = bodyjs['email']
 
-        if self.hosted_domain:
-            if not username.endswith('@'+self.hosted_domain) or \
-                bodyjs['hd'] != self.hosted_domain:
+        if self.hosted_domains:
+            username, _, domain = username.partition('@')
+            if not domain in self.hosted_domains or \
+                bodyjs['hd'] not in self.hosted_domains:
                 raise HTTPError(403,
                     "You are not signed in to your {} account.".format(
-                        self.hosted_domain)
+                        domain)
                 )
-            else:
-                username = username.split('@')[0]
 
         return username
 
