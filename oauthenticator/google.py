@@ -11,7 +11,7 @@ from tornado             import gen
 from tornado.auth        import GoogleOAuth2Mixin
 from tornado.web         import HTTPError
 
-from traitlets           import Unicode, Tuple, default
+from traitlets           import Unicode, Tuple
 
 from jupyterhub.auth     import LocalAuthenticator
 from jupyterhub.utils    import url_path_join
@@ -78,10 +78,12 @@ class GoogleOAuthenticator(OAuthenticator, GoogleOAuth2Mixin):
         help="""Google Apps hosted domain string, e.g. My College"""
     )
 
-    @default('hosted_domain')
     def _get_hosted_domain(self):
         domains = os.environ.get('HOSTED_DOMAIN', self.hosted_domain)
-        return tuple([domain.strip() for domain in domains.split(',')])
+        if isinstance(domains, str):
+            return tuple([domain.strip() for domain in domains.split(',')])
+        else:
+            return domains
 
     @gen.coroutine
     def authenticate(self, handler, data=None):
