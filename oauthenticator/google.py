@@ -80,7 +80,7 @@ class GoogleOAuthenticator(OAuthenticator, GoogleOAuth2Mixin):
 
     @default('hosted_domain')
     def _get_hosted_domain(self):
-        domains = os.environ.get('HOSTED_DOMAIN', '')
+        domains = os.environ.get('HOSTED_DOMAIN', self.hosted_domain)
         return tuple([domain.strip() for domain in domains.split(',')])
 
     @gen.coroutine
