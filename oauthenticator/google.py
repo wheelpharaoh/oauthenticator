@@ -115,6 +115,8 @@ class GoogleOAuthenticator(OAuthenticator, GoogleOAuth2Mixin):
 
         if self.hosted_domains:
             username, _, domain = username.partition('@')
+            print(username, _, domain)
+            print(self.hosted_domains)
             if not domain in self.hosted_domains or \
                 bodyjs['hd'] not in self.hosted_domains:
                 raise HTTPError(403,
