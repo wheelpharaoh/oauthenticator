@@ -111,6 +111,8 @@ class GoogleOAuthenticator(OAuthenticator, GoogleOAuth2Mixin):
 
         username = bodyjs['email']
 
+        self.hosted_domains = self._get_hosted_domain()
+
         if self.hosted_domains:
             username, _, domain = username.partition('@')
             if not domain in self.hosted_domains or \
